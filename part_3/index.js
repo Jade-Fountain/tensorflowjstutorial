@@ -165,7 +165,11 @@ $('#predict-btn').click(async() => {
         return { index: i, value: d }
     })
     tfvis.render.barchart($('#predict-graph')[0], barchartData,  { width: 400, height: 140 }) 
-})
+});
+
+$('#dissect-cnn-btn').click(function(){
+	util.visualiseCNN('cnn-dissection',model,parseInt($('#image-scale-input').val()));
+});
 
 
 

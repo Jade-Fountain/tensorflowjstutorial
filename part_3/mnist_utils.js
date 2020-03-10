@@ -71,6 +71,35 @@ export function showExample(elementId, data, labels, predictions=null ){
     }
 }
 
+export function visualiseCNN(elementID, model, scale){
+    const imgElement = document.getElementById(elementID);
+    imgElement.innerHTML = ''
+    model.layers.forEach((layer)=>{
+        if(layer.trainableWeights.length == 0){
+            return;
+        }
+        const width = layer.trainableWeights[0].shape[0];
+        const height = layer.trainableWeights[0].shape[1];
+        for(var i = 0; i < layer.trainableWeights[0].shape[3]; i++){
+            const img = layer.trainableWeights[0].val.slice([0,0,0,i],[width,height,1,1]);
+
+            const div = document.createElement('div');
+            imgElement.appendChild(div);
+            // div.className = ''
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext("2d");
+
+            // canvas.className = 
+            const reshaped = img.reshape([width,height,1]);
+            const positive = tf.add(reshaped,[-reshaped.min().arraySync()]);
+            const normalised = tf.mul(positive,[1/positive.max().arraySync()]);
+            tf.browser.toPixels(normalised.resizeNearestNeighbor([scale*width,scale*height]),canvas);
+            div.appendChild(canvas);
+        }
+    });
+}
+
 export function cropImage(img, width=140){
     img = img.slice([0,0,3])
     var mask_x = tf.greater(img.sum(0), 0).reshape([-1])
