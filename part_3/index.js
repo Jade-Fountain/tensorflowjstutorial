@@ -81,5 +81,91 @@ $('#train-btn').click(async() => {
     $('#save-btn').prop('disabled', false)        
 });
 
+$('#eval-btn').click(async() => {    
+    let [x_test, y_test] = data.getTestData()
+    
+    let y_pred = model.predict(x_test).argMax(1)
+    let y_label = y_test.argMax(1)
+    
+    let eval_test = await tfvis.metrics.accuracy(y_label, y_pred)
+    $('#test-acc').text( 'Testset Accuracy : '+ round(eval_test)+'%')   
+    
+    const classNames = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
+    const conf = $('#confusion-matrix')[0]
+    const acc = $('#class-accuracy')[0]
+    
+    const classaAcc = await tfvis.metrics.perClassAccuracy(y_label,y_pred)
+    const confMt = await tfvis.metrics.confusionMatrix(y_label, y_pred)    
+
+    tfvis.show.perClassAccuracy(acc, classaAcc, classNames)
+    tfvis.render.confusionMatrix(conf, { values: confMt , tickLabels: classNames })
+});
+
+$('#show-example-btn').click(function(){
+    let [x_test, y_test] = data.getTestData(16)
+    let y_pred = model.predict(x_test)
+    const labels = Array.from(y_test.argMax(1).dataSync())
+    const predictions = Array.from(y_pred.argMax(1).dataSync())
+    util.showExample('example-preview', x_test, labels, predictions )
+});
+
+$('#save-btn').click(async() => {
+    const saveResults = await model.save('downloads://')
+    
+    // Uncommnt for Firefox browser
+    // util.firefoxSave(model)
+    
+    $('#saved').show()
+    setTimeout(function() {
+        $('#saved').fadeOut()
+    }, 1000)
+});
+
+$('#load-model-btn').click(async() => {    
+    $('#loaded').show()
+    
+    const jsonUpload = $('#json-upload')[0]
+    const weightsUpload = $('#weights-upload')[0]
+    model = await tf.loadLayersModel(tf.io.browserFiles([jsonUpload.files[0], weightsUpload.files[0]]))
+    
+    $('#predict-btn').prop('disabled', false)
+    
+    setTimeout(function() {
+        $('#loaded').fadeOut()
+    }, 1000)
+    
+    if (data.isDownloaded){        
+        $('#eval-btn').prop('disabled', false)
+        $('#show-example-btn').prop('disabled', false)
+    }
+});
+
+initCanvas('predict-canvas')
+
+$('#clear-btn').click(function(){
+    var canvas = $('#predict-canvas')[0]
+    var context = canvas.getContext('2d')
+    context.clearRect(0, 0, canvas.width, canvas.height)
+})
+
+$('#predict-btn').click(async() => {
+    var canvas = $('#predict-canvas')[0]
+    var preview = $('#preview-canvas')[0]
+    
+    var img = tf.browser.fromPixels(canvas, 4)
+    var resized = util.cropImage(img, canvas.width)    
+    tf.browser.toPixels(resized, preview)    
+    
+    var x_data = tf.cast(resized.reshape([1, 28, 28, 1]), 'float32')    
+    var y_pred = model.predict(x_data)    
+    var prediction = Array.from(y_pred.argMax(1).dataSync())    
+    $('#prediction').text( 'Predicted: '+ prediction)    
+    
+    const barchartData = Array.from(y_pred.dataSync()).map((d, i) => {
+        return { index: i, value: d }
+    })
+    tfvis.render.barchart($('#predict-graph')[0], barchartData,  { width: 400, height: 140 }) 
+})
+
 
 
