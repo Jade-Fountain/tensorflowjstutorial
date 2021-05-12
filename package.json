@@ -14,7 +14,7 @@
     "@tensorflow/tfjs-vis": "^1.4.0",
     "babel-polyfill": "^6.26.0",
     "bootstrap": "^4.4.1",
-    "chart.js": "^2.9.3",
+    "chart.js": "^2.9.4",
     "jquery": "^3.4.1"
   }
 }
